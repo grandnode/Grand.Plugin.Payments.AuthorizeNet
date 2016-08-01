@@ -2,10 +2,8 @@
 using Grand.Web.Framework;
 using Grand.Web.Framework.Mvc;
 
-namespace Grand.Plugin.Payments.AuthorizeNet.Models
-{
-    public class ConfigurationModel : BaseNopModel
-    {
+namespace Grand.Plugin.Payments.AuthorizeNet.Models {
+    public class ConfigurationModel : BaseNopModel {
         public string ActiveStoreScopeConfiguration { get; set; }
 
         [NopResourceDisplayName("Plugins.Payments.AuthorizeNet.Fields.UseSandbox")]

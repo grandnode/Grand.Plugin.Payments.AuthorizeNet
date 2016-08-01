@@ -3,12 +3,9 @@ using System.Web.Mvc;
 using Grand.Web.Framework;
 using Grand.Web.Framework.Mvc;
 
-namespace Grand.Plugin.Payments.AuthorizeNet.Models
-{
-    public class PaymentInfoModel : BaseNopModel
-    {
-        public PaymentInfoModel()
-        {
+namespace Grand.Plugin.Payments.AuthorizeNet.Models {
+    public class PaymentInfoModel : BaseNopModel {
+        public PaymentInfoModel() {
             ExpireMonths = new List<SelectListItem>();
             ExpireYears = new List<SelectListItem>();
         }

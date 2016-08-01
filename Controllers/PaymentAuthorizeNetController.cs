@@ -11,47 +11,50 @@ using Grand.Services.Payments;
 using Grand.Services.Stores;
 using Grand.Web.Framework;
 using Grand.Web.Framework.Controllers;
+using Grand.Core.Domain.Payments;
 
-namespace Grand.Plugin.Payments.AuthorizeNet.Controllers
-{
-    public class PaymentAuthorizeNetController : BasePaymentController
-    {
-        private readonly IWorkContext _workContext;
-        private readonly IStoreService _storeService;
-        private readonly ISettingService _settingService;
+namespace Grand.Plugin.Payments.AuthorizeNet.Controllers {
+    public class PaymentAuthorizeNetController : BasePaymentController {
         private readonly ILocalizationService _localizationService;
+        private readonly ISettingService _settingService;
+        private readonly IStoreService _storeService;
+        private readonly IWorkContext _workContext;
+        private readonly IPaymentService _paymentService;
+        private readonly PaymentSettings _paymentSettings;
 
-        public PaymentAuthorizeNetController(IWorkContext workContext,
-            IStoreService storeService, 
-            ISettingService settingService, 
-            ILocalizationService localizationService)
-        {
-            this._workContext = workContext;
-            this._storeService = storeService;
-            this._settingService = settingService;
+        public PaymentAuthorizeNetController(ILocalizationService localizationService,
+            ISettingService settingService,
+            IStoreService storeService,
+            IWorkContext workContext,
+            IPaymentService paymentService,
+            PaymentSettings paymentSettings) {
             this._localizationService = localizationService;
+            this._settingService = settingService;
+            this._storeService = storeService;
+            this._workContext = workContext;
+            this._paymentService = paymentService;
+            this._paymentSettings = paymentSettings;
         }
-        
+
         [AdminAuthorize]
         [ChildActionOnly]
-        public ActionResult Configure()
-        {
+        public ActionResult Configure() {
             //load settings for a chosen store scope
-            var storeScope = this.GetActiveStoreScopeConfiguration(_storeService, _workContext);
+            var storeScope = GetActiveStoreScopeConfiguration(_storeService, _workContext);
             var authorizeNetPaymentSettings = _settingService.LoadSetting<AuthorizeNetPaymentSettings>(storeScope);
 
-            var model = new ConfigurationModel();
-            model.UseSandbox = authorizeNetPaymentSettings.UseSandbox;
-            model.TransactModeId = Convert.ToInt32(authorizeNetPaymentSettings.TransactMode);
-            model.TransactionKey = authorizeNetPaymentSettings.TransactionKey;
-            model.LoginId = authorizeNetPaymentSettings.LoginId;
-            model.AdditionalFee = authorizeNetPaymentSettings.AdditionalFee;
-            model.AdditionalFeePercentage = authorizeNetPaymentSettings.AdditionalFeePercentage;
-            model.TransactModeValues = authorizeNetPaymentSettings.TransactMode.ToSelectList();
+            var model = new ConfigurationModel {
+                UseSandbox = authorizeNetPaymentSettings.UseSandbox,
+                TransactModeId = Convert.ToInt32(authorizeNetPaymentSettings.TransactMode),
+                TransactionKey = authorizeNetPaymentSettings.TransactionKey,
+                LoginId = authorizeNetPaymentSettings.LoginId,
+                AdditionalFee = authorizeNetPaymentSettings.AdditionalFee,
+                AdditionalFeePercentage = authorizeNetPaymentSettings.AdditionalFeePercentage,
+                TransactModeValues = authorizeNetPaymentSettings.TransactMode.ToSelectList(),
+                ActiveStoreScopeConfiguration = storeScope
+            };
 
-            model.ActiveStoreScopeConfiguration = storeScope;
-            if (!String.IsNullOrEmpty(storeScope))
-            {
+            if (!(string.IsNullOrEmpty(storeScope)) /*> 0*/) {
                 model.UseSandbox_OverrideForStore = _settingService.SettingExists(authorizeNetPaymentSettings, x => x.UseSandbox, storeScope);
                 model.TransactModeId_OverrideForStore = _settingService.SettingExists(authorizeNetPaymentSettings, x => x.TransactMode, storeScope);
                 model.TransactionKey_OverrideForStore = _settingService.SettingExists(authorizeNetPaymentSettings, x => x.TransactionKey, storeScope);
@@ -66,8 +69,7 @@ namespace Grand.Plugin.Payments.AuthorizeNet.Controllers
         [HttpPost]
         [AdminAuthorize]
         [ChildActionOnly]
-        public ActionResult Configure(ConfigurationModel model)
-        {
+        public ActionResult Configure(ConfigurationModel model) {
             if (!ModelState.IsValid)
                 return Configure();
 
@@ -125,27 +127,22 @@ namespace Grand.Plugin.Payments.AuthorizeNet.Controllers
         }
 
         [ChildActionOnly]
-        public ActionResult PaymentInfo()
-        {
+        public ActionResult PaymentInfo() {
             var model = new PaymentInfoModel();
-            
+
             //years
-            for (int i = 0; i < 15; i++)
-            {
+            for (int i = 0; i < 15; i++) {
                 string year = Convert.ToString(DateTime.Now.Year + i);
-                model.ExpireYears.Add(new SelectListItem
-                {
+                model.ExpireYears.Add(new SelectListItem {
                     Text = year,
                     Value = year,
                 });
             }
 
             //months
-            for (int i = 1; i <= 12; i++)
-            {
+            for (int i = 1; i <= 12; i++) {
                 string text = (i < 10) ? "0" + i : i.ToString();
-                model.ExpireMonths.Add(new SelectListItem
-                {
+                model.ExpireMonths.Add(new SelectListItem {
                     Text = text,
                     Value = i.ToString(),
                 });
@@ -167,14 +164,12 @@ namespace Grand.Plugin.Payments.AuthorizeNet.Controllers
         }
 
         [NonAction]
-        public override IList<string> ValidatePaymentForm(FormCollection form)
-        {
+        public override IList<string> ValidatePaymentForm(FormCollection form) {
             var warnings = new List<string>();
 
             //validate
             var validator = new PaymentInfoValidator(_localizationService);
-            var model = new PaymentInfoModel
-            {
+            var model = new PaymentInfoModel {
                 CardholderName = form["CardholderName"],
                 CardNumber = form["CardNumber"],
                 CardCode = form["CardCode"],
@@ -189,8 +184,7 @@ namespace Grand.Plugin.Payments.AuthorizeNet.Controllers
         }
 
         [NonAction]
-        public override ProcessPaymentRequest GetPaymentInfo(FormCollection form)
-        {
+        public override ProcessPaymentRequest GetPaymentInfo(FormCollection form) {
             var paymentInfo = new ProcessPaymentRequest();
             //CreditCardType is not used by Authorize.NET
             paymentInfo.CreditCardName = form["CardholderName"];
@@ -199,6 +193,24 @@ namespace Grand.Plugin.Payments.AuthorizeNet.Controllers
             paymentInfo.CreditCardExpireYear = int.Parse(form["ExpireYear"]);
             paymentInfo.CreditCardCvv2 = form["CardCode"];
             return paymentInfo;
+        }
+
+        [ValidateInput(false)]
+        public ActionResult IPNHandler(FormCollection form) {
+            var processor = _paymentService.LoadPaymentMethodBySystemName("Payments.AuthorizeNet") as AuthorizeNetPaymentProcessor;
+            if (processor == null || !processor.IsPaymentMethodActive(_paymentSettings) || !processor.PluginDescriptor.Installed)
+                throw new NopException("AuthorizeNet module cannot be loaded");
+
+            var responseCode = form.AllKeys.Contains("x_response_code") ? form["x_response_code"] : String.Empty;
+
+            if (responseCode == "1") {
+                var transactionId = form.AllKeys.Contains("x_trans_id") ? form["x_trans_id"] : String.Empty;
+
+                processor.ProcessRecurringPayment(transactionId);
+            }
+
+            //nothing should be rendered to visitor
+            return Content(String.Empty);
         }
     }
 }
