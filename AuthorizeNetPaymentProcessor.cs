@@ -181,7 +181,7 @@ namespace Grand.Plugin.Payments.AuthorizeNet {
                     transactionType = transactionTypeEnum.authCaptureTransaction;
                     break;
                 default:
-                    throw new NopException("Not supported transaction mode");
+                    throw new Exception("Not supported transaction mode");
             }
 
             var billTo = new customerAddressType {
@@ -491,7 +491,7 @@ namespace Grand.Plugin.Payments.AuthorizeNet {
                     paymentScheduleInterval.unit = ARBSubscriptionUnitEnum.months;
                     break;
                 default:
-                    throw new NopException("Not supported cycle period");
+                    throw new GrandException("Not supported cycle period");
             }
 
             var paymentSchedule = new paymentScheduleType {
@@ -819,6 +819,14 @@ namespace Grand.Plugin.Payments.AuthorizeNet {
         public bool SkipPaymentInfo {
             get {
                 return false;
+            }
+        }
+
+        public string PaymentMethodDescription
+        {
+            get
+            {
+                return "";
             }
         }
 

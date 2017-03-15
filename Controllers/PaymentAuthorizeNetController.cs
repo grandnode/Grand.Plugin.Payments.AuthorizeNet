@@ -199,7 +199,7 @@ namespace Grand.Plugin.Payments.AuthorizeNet.Controllers {
         public ActionResult IPNHandler(FormCollection form) {
             var processor = _paymentService.LoadPaymentMethodBySystemName("Payments.AuthorizeNet") as AuthorizeNetPaymentProcessor;
             if (processor == null || !processor.IsPaymentMethodActive(_paymentSettings) || !processor.PluginDescriptor.Installed)
-                throw new NopException("AuthorizeNet module cannot be loaded");
+                throw new GrandException("AuthorizeNet module cannot be loaded");
 
             var responseCode = form.AllKeys.Contains("x_response_code") ? form["x_response_code"] : String.Empty;
 
