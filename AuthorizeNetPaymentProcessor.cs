@@ -21,7 +21,6 @@ using Grand.Services.Logging;
 using Grand.Services.Orders;
 using Grand.Services.Payments;
 using Grand.Services.Security;
-using Autofac;
 using Grand.Core.Infrastructure;
 
 
